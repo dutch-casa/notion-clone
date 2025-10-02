@@ -21,10 +21,6 @@ WORKDIR /app
 # Install dependencies
 RUN apk add --no-cache icu-libs
 
-# Install EF Core tools globally
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="${PATH}:/root/.dotnet/tools"
-
 # Copy published app
 COPY --from=build /app/publish .
 
@@ -54,8 +50,12 @@ RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
 # Set ownership
 RUN chown -R appuser:appuser /app /src
 
-# Switch to non-root user
+# Switch to non-root user to install dotnet-ef for that user
 USER appuser
+
+# Install EF Core tools globally for appuser
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="${PATH}:/home/appuser/.dotnet/tools"
 
 # Expose port
 EXPOSE 8081
