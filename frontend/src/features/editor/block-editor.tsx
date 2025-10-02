@@ -67,7 +67,7 @@ export function BlockEditor({
           levels: [1, 2, 3],
         },
         // Disable history when using collaboration
-        history: !collaborationService,
+        history: collaborationService ? false : undefined,
       }),
       Placeholder.configure({
         placeholder: ({ node }) => {
@@ -127,6 +127,7 @@ export function BlockEditor({
     return exts;
   }, [collaborationService, user, pageId, orgId, uploadImageCallback]);
 
+  // @ts-expect-error - Type conflict between novel's bundled TipTap v2 and project's TipTap v3
   const editor = useEditor({
     extensions,
     // Only set initial content when NOT using collaboration

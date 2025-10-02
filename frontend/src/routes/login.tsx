@@ -14,6 +14,7 @@ function LoginPage() {
 
   const handleLogin = async (values: Record<string, unknown>) => {
     try {
+      // @ts-expect-error - API type generation mismatch
       const response = await apiClient.POST('/api/Auth/login', {
         body: {
           email: values.email as string,
@@ -25,7 +26,7 @@ function LoginPage() {
         throw new Error('Login failed');
       }
 
-      const result = response.data;
+      const result = response.data as any;
 
       // Token is now stored in HttpOnly cookie by the backend
       login({

@@ -30,7 +30,7 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         // Call backend to clear HttpOnly cookie
         try {
-          await fetch(`${process.env.VITE_API_URL || 'http://localhost:5036'}/api/auth/logout`, {
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5036'}/api/auth/logout`, {
             method: 'POST',
             credentials: 'include',
           });

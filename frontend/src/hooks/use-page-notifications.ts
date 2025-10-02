@@ -28,7 +28,7 @@ export function usePageNotifications({
   enabled = true,
 }: UsePageNotificationsOptions) {
   const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   const user = useAuthStore((state) => state.user);
 
@@ -71,7 +71,7 @@ export function usePageNotifications({
         eventSource.onmessage = (event) => {
           try {
             const notification: PageNotification = JSON.parse(event.data);
-            console.log('[PageNotifications] Received:', notification.eventType, notification.pageTitle);
+            console.log('[PageNotifications] Received:', notification.eventType, notification.title);
             onNotification?.(notification);
           } catch (error) {
             console.error('[PageNotifications] Failed to parse notification:', error);

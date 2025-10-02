@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth-store';
 import { toast } from 'sonner';
 
 interface UploadImageParams {
@@ -21,8 +20,6 @@ interface UploadImageResult {
 }
 
 export function useImageUpload() {
-  const token = useAuthStore((state) => state.token);
-
   return useMutation({
     mutationFn: async ({ file, pageId, orgId }: UploadImageParams): Promise<UploadImageResult> => {
       const formData = new FormData();
@@ -32,9 +29,7 @@ export function useImageUpload() {
 
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5036'}/api/Images/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
         body: formData,
       });
 
@@ -55,15 +50,11 @@ export function useImageUpload() {
 }
 
 export function useImageDelete() {
-  const token = useAuthStore((state) => state.token);
-
   return useMutation({
     mutationFn: async (imageId: string): Promise<void> => {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5036'}/api/Images/${imageId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {

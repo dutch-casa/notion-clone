@@ -37,7 +37,7 @@ createRoot(rootElement).render(
   <ThemeProvider>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-      {import.meta.env.DEV && <ReactQueryDevtools position="bottom-left" />}
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   </ThemeProvider>
 );

@@ -2,7 +2,7 @@ import { useForm } from '@tanstack/react-form';
 import { createContext, type ReactNode, useContext } from 'react';
 
 interface AuthContextValue {
-  form: ReturnType<typeof useForm>;
+  form: ReturnType<typeof useForm<{ email: string; password: string; name: string }>>;
   isSubmitting: boolean;
   error: string | null;
 }

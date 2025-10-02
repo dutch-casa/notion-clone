@@ -25,7 +25,7 @@ export function useInvitationNotifications({
   enabled = true,
 }: UseInvitationNotificationsOptions = {}) {
   const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   const user = useAuthStore((state) => state.user);
 

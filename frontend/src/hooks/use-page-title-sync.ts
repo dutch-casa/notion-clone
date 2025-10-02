@@ -53,9 +53,9 @@ export function usePageTitleSync(
         }
       };
 
-      channel.onerror = (error) => {
+      channel.addEventListener('messageerror', (error) => {
         console.error('[PageTitleSync] Broadcast channel error:', error);
-      };
+      });
     } catch (error) {
       console.error('[PageTitleSync] Failed to create BroadcastChannel:', error);
       isSupported.current = false;

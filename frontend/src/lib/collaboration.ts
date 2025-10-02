@@ -7,7 +7,6 @@ import {
 	LogLevel,
 } from '@microsoft/signalr';
 import type { QueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth-store';
 
 export interface CollaborationUser {
 	id: string;
@@ -36,7 +35,7 @@ export class CollaborationService {
 	private synced = false;
 	private syncListeners = new Set<() => void>();
 	private awarenessListeners = new Set<() => void>();
-	private saveDebounceTimer: NodeJS.Timeout | null = null;
+	private saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	private cachedAwarenessSnapshot: Map<number, unknown> = new Map();
 	private wasInitiallyEmpty = false;
 
@@ -60,13 +59,10 @@ export class CollaborationService {
 			user: currentUser,
 		});
 
-		// Build SignalR connection
+		// Build SignalR connection with cookie authentication
 		this.connection = new HubConnectionBuilder()
 			.withUrl(`${apiUrl}/hubs/document`, {
-				accessTokenFactory: () => {
-					const token = useAuthStore.getState().token;
-					return token || '';
-				},
+				withCredentials: true,
 			})
 			.withAutomaticReconnect()
 			.configureLogging(LogLevel.Information)
@@ -125,12 +121,12 @@ export class CollaborationService {
 		});
 
 		// Handle user joined
-		this.connection.on('UserJoined', (userData: { userId: string; userName: string }) => {
+		this.connection.on('UserJoined', () => {
 			// User joined - we'll get their presence via PresenceUpdate
 		});
 
 		// Handle user left
-		this.connection.on('UserLeft', (connectionId: string) => {
+		this.connection.on('UserLeft', () => {
 			// User left - presence will be cleaned up via PresenceUpdate
 		});
 
@@ -168,7 +164,7 @@ export class CollaborationService {
 
 	private setupAwarenessHandlers() {
 		// Send local awareness changes to server
-		this.awareness.on('change', ({ added, updated, removed }) => {
+		this.awareness.on('change', ({ added, updated, removed }: { added: number[]; updated: number[]; removed: number[] }) => {
 			// Only broadcast if local state changed (not remote updates)
 			const changedClients = added.concat(updated).concat(removed);
 			if (changedClients.includes(this.awareness.clientID)) {
