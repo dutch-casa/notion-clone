@@ -2,10 +2,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
 
-# Install EF Core tools for generating migration bundle
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="${PATH}:/root/.dotnet/tools"
-
 # Copy csproj files and restore dependencies
 COPY Backend.Domain/Backend.Domain.csproj Backend.Domain/
 COPY Backend.Application/Backend.Application.csproj Backend.Application/
@@ -18,49 +14,45 @@ COPY . .
 WORKDIR /src/Backend.Presentation
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
-# Generate self-contained migration bundle
-WORKDIR /src
-RUN dotnet ef migrations bundle \
-    --project Backend.Infrastructure/Backend.Infrastructure.csproj \
-    --startup-project Backend.Presentation/Backend.Presentation.csproj \
-    --configuration Release \
-    --self-contained \
-    --output /app/publish/efbundle
-
-# Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
+# Runtime stage - using SDK image to run migrations
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS final
 WORKDIR /app
 
-# Install dependencies for ICU (required for EF Core bundle)
+# Install dependencies
 RUN apk add --no-cache icu-libs
+
+# Install EF Core tools globally
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Copy published app
+COPY --from=build /app/publish .
+
+# Copy source files needed for migrations
+COPY --from=build /src /src
 
 # Create non-root user for security
 RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
-
-# Copy published app and migration bundle
-COPY --from=build /app/publish .
 
 # Create startup script that runs migrations then starts the app
 RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
     echo 'set -e' >> /app/docker-entrypoint.sh && \
     echo '' >> /app/docker-entrypoint.sh && \
     echo 'echo "Running database migrations..."' >> /app/docker-entrypoint.sh && \
-    echo 'if [ -f /app/efbundle ]; then' >> /app/docker-entrypoint.sh && \
-    echo '  ./efbundle --connection "$ConnectionStrings__DefaultConnection" || {' >> /app/docker-entrypoint.sh && \
-    echo '    echo "Migration failed! Exiting..."' >> /app/docker-entrypoint.sh && \
-    echo '    exit 1' >> /app/docker-entrypoint.sh && \
-    echo '  }' >> /app/docker-entrypoint.sh && \
-    echo '  echo "Migrations completed successfully"' >> /app/docker-entrypoint.sh && \
-    echo 'else' >> /app/docker-entrypoint.sh && \
-    echo '  echo "No migration bundle found, skipping migrations"' >> /app/docker-entrypoint.sh && \
-    echo 'fi' >> /app/docker-entrypoint.sh && \
+    echo 'cd /src' >> /app/docker-entrypoint.sh && \
+    echo 'dotnet ef database update --project Backend.Infrastructure/Backend.Infrastructure.csproj --startup-project Backend.Presentation/Backend.Presentation.csproj --no-build || {' >> /app/docker-entrypoint.sh && \
+    echo '  echo "Migration failed! Exiting..."' >> /app/docker-entrypoint.sh && \
+    echo '  exit 1' >> /app/docker-entrypoint.sh && \
+    echo '}' >> /app/docker-entrypoint.sh && \
+    echo 'echo "Migrations completed successfully"' >> /app/docker-entrypoint.sh && \
     echo '' >> /app/docker-entrypoint.sh && \
+    echo 'cd /app' >> /app/docker-entrypoint.sh && \
     echo 'echo "Starting application..."' >> /app/docker-entrypoint.sh && \
     echo 'exec dotnet Backend.Presentation.dll "$@"' >> /app/docker-entrypoint.sh && \
-    chmod +x /app/docker-entrypoint.sh /app/efbundle
+    chmod +x /app/docker-entrypoint.sh
 
 # Set ownership
-RUN chown -R appuser:appuser /app
+RUN chown -R appuser:appuser /app /src
 
 # Switch to non-root user
 USER appuser
