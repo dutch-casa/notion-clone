@@ -1,0 +1,11 @@
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/Backend.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/Backend.Domain.AssemblyInfoInputs.cache
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/Backend.Domain.AssemblyInfo.cs
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/Backend.Domain.csproj.CoreCompileInputs.cache
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/bin/Debug/net9.0/Backend.Domain.deps.json
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/bin/Debug/net9.0/Backend.Domain.dll
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/bin/Debug/net9.0/Backend.Domain.pdb
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/Backend.Domain.dll
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/refint/Backend.Domain.dll
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/Backend.Domain.pdb
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/ref/Backend.Domain.dll

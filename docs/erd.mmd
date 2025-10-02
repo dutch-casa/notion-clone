@@ -1,0 +1,111 @@
+erDiagram
+    %% IdentityOrg Context
+    users ||--o{ orgs : owns
+    users ||--o{ members : "is member"
+    orgs ||--o{ members : has
+    orgs ||--o{ pages : owns
+    orgs ||--o{ files : owns
+
+    %% Authorization Context
+    resources ||--o{ acls : has
+    resources ||--o{ share_links : "shared via"
+
+    %% Documents Context
+    pages ||--o{ blocks : contains
+    pages ||--o{ doc_states : "has CRDT state"
+    blocks ||--o{ blocks : "nested under"
+
+    %% Files Context
+    files ||--o{ file_blocks : "attached via"
+    blocks ||--o{ file_blocks : "attaches"
+
+    users {
+        uuid id PK
+        string email UK
+        string name
+        string password_hash
+        timestamptz created_at
+    }
+
+    orgs {
+        uuid id PK
+        string name
+        uuid owner_id FK
+        timestamptz created_at
+    }
+
+    members {
+        uuid org_id FK
+        uuid user_id FK
+        string role "owner|admin|member"
+        timestamptz joined_at
+        PK "(org_id, user_id)"
+    }
+
+    resources {
+        uuid id PK
+        string type "org|page|file"
+    }
+
+    acls {
+        uuid resource_id FK
+        string subject_type "user|org|role"
+        string subject_id
+        string capability "view|comment|edit|admin"
+        PK "(resource_id, subject_type, subject_id, capability)"
+    }
+
+    share_links {
+        uuid id PK
+        uuid resource_id FK
+        string capability "view|comment|edit|admin"
+        string token_hash UK
+        timestamptz expires_at "nullable"
+        uuid created_by FK
+        timestamptz created_at
+    }
+
+    pages {
+        uuid id PK
+        uuid org_id FK
+        string title
+        uuid created_by FK
+        timestamptz created_at
+    }
+
+    blocks {
+        uuid id PK
+        uuid page_id FK
+        uuid parent_block_id FK "nullable, self-reference"
+        numeric sort_key "numeric(18,9), index"
+        string type "paragraph|heading|todo|file"
+        jsonb json
+        INDEX "idx_blocks_page_sort (page_id, sort_key)"
+    }
+
+    doc_states {
+        uuid page_id FK
+        bigint seq
+        bytea crdt_blob
+        boolean is_snapshot "default false"
+        timestamptz created_at
+        PK "(page_id, seq)"
+        INDEX "idx_doc_states_page_seq (page_id, seq)"
+    }
+
+    files {
+        uuid id PK
+        uuid org_id FK
+        uuid owner_id FK
+        string key UK "S3 object key"
+        string mime
+        bigint size
+        timestamptz created_at
+        INDEX "idx_files_org_created (org_id, created_at)"
+    }
+
+    file_blocks {
+        uuid block_id FK
+        uuid file_id FK
+        PK "(block_id, file_id)"
+    }

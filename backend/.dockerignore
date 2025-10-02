@@ -1,0 +1,44 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Development files
+**/.vs/
+**/.vscode/
+**/*.user
+**/*.suo
+**/.idea/
+**/.DS_Store
+
+# Test projects
+Backend.Tests/
+**/TestResults/
+**/*.trx
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+LICENSE
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Docker files (don't need in image)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github/
+
+# Logs
+**/logs/
+**/*.log

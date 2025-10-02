@@ -1,0 +1,147 @@
+sequenceDiagram
+    participant Browser
+    participant API
+    participant AuthZ as AuthorizationService
+    participant DB as Database
+    participant Hub as SignalR DocHub
+    participant Redis
+    participant Storage as MinIO
+
+    %% Sequence 1: User Registration & Login
+    Note over Browser,DB: Authentication Flow
+    Browser->>+API: POST /auth/register {email, password, name}
+    API->>API: Hash password
+    API->>+DB: INSERT INTO users
+    DB-->>-API: User created
+    API->>API: Generate JWT token
+    API-->>-Browser: {token, user}
+
+    Browser->>+API: POST /auth/login {email, password}
+    API->>+DB: SELECT user WHERE email
+    DB-->>-API: User found
+    API->>API: Verify password hash
+    API->>API: Generate JWT token
+    API-->>-Browser: {token, user}
+
+    %% Sequence 2: Create Organization
+    Note over Browser,DB: CreateOrg Flow
+    Browser->>+API: POST /orgs {name} [Bearer token]
+    API->>API: Validate JWT, extract userId
+    API->>API: Create Org aggregate
+    API->>API: Add owner as Member with role "owner"
+    API->>+DB: BEGIN TRANSACTION
+    API->>DB: INSERT INTO orgs
+    API->>DB: INSERT INTO members (orgId, userId, "owner")
+    API->>DB: INSERT INTO resources (orgId, "org")
+    API->>DB: INSERT INTO acls (resourceId, "user", userId, "admin")
+    DB-->>-API: COMMIT
+    API-->>-Browser: {orgId, name, ownerId}
+
+    %% Sequence 3: Create Page
+    Note over Browser,Redis: CreatePage Flow
+    Browser->>+API: POST /orgs/{orgId}/pages {title} [Bearer token]
+    API->>API: Extract userId from JWT
+    API->>+AuthZ: Can(userId, orgId, "edit")?
+    AuthZ->>+DB: SELECT acls WHERE resourceId=orgId AND subjectId=userId
+    DB-->>-AuthZ: ACLs found
+    AuthZ-->>-API: true
+    API->>API: Create Page aggregate
+    API->>API: Initialize empty YDoc
+    API->>+DB: BEGIN TRANSACTION
+    API->>DB: INSERT INTO pages
+    API->>DB: INSERT INTO doc_states (pageId, seq=1, crdt_blob=initial, is_snapshot=true)
+    API->>DB: INSERT INTO resources (pageId, "page")
+    API->>DB: INSERT INTO acls (pageId, "user", userId, "admin")
+    DB-->>-API: COMMIT
+    API-->>-Browser: {pageId, orgId, title, createdBy}
+
+    %% Sequence 4: Apply CRDT Update (Real-time Collaboration)
+    Note over Browser,Redis: ApplyCrdtUpdate Flow (SignalR)
+    Browser->>+Hub: JoinPage(pageId)
+    Hub->>+AuthZ: Can(userId, pageId, "view")?
+    AuthZ->>+DB: SELECT acls WHERE resourceId=pageId
+    DB-->>-AuthZ: ACLs found
+    AuthZ-->>-Hub: true
+    Hub->>Hub: Add connection to group "page:{pageId}"
+    Hub->>Redis: Subscribe to "page:{pageId}" channel
+    Hub->>Hub: Broadcast PresenceUpdate (user joined)
+    Hub-->>-Browser: JoinPage success
+
+    Browser->>Browser: User types in editor
+    Browser->>Browser: Yjs generates update
+    Browser->>+Hub: ApplyCrdtUpdate(pageId, updateB64, null)
+    Hub->>+AuthZ: Can(userId, pageId, "edit")?
+    AuthZ-->>-Hub: true
+    Hub->>Hub: Decode updateB64 to byte[]
+    Hub->>+DB: BEGIN TRANSACTION
+    DB->>DB: SELECT MAX(seq) FROM doc_states WHERE page_id=pageId
+    DB->>DB: INSERT INTO doc_states (pageId, seq=next, crdt_blob=update)
+    DB-->>-Hub: COMMIT, seq returned
+    Hub->>Redis: Publish CrdtUpdate(pageId, updateB64) to channel
+    Redis-->>Hub: Ack
+    Hub->>Hub: Broadcast to group "page:{pageId}" (exclude sender)
+    Hub-->>-Browser: {seq: 42}
+
+    Note over Browser,Browser: Other Browser Instance
+    Redis->>Hub: CrdtUpdate(pageId, updateB64)
+    Hub->>Browser: On("CrdtUpdate", (pageId, updateB64))
+    Browser->>Browser: Decode updateB64
+    Browser->>Browser: Y.applyUpdate(ydoc, update)
+    Browser->>Browser: Editor re-renders
+
+    %% Sequence 5: Presigned File Upload
+    Note over Browser,Storage: File Upload Flow
+    Browser->>+API: POST /files:presign {mime, size, filename} [Bearer token]
+    API->>API: Extract userId, orgId from JWT/context
+    API->>+AuthZ: Can(userId, orgId, "edit")?
+    AuthZ-->>-API: true
+    API->>API: Generate fileId (Guid)
+    API->>API: Sanitize filename
+    API->>API: Generate storage key: "{orgId}/{fileId}/{filename}"
+    API->>+Storage: GeneratePresignedPost(key, mime, size, 15min)
+    Storage-->>-API: {url, fields, expiresAt}
+    API->>+DB: INSERT INTO files (fileId, orgId, ownerId, key, mime, size)
+    DB-->>-API: File entity created
+    API-->>-Browser: {fileId, url, fields, expiresAt}
+
+    Browser->>Browser: User confirms upload
+    Browser->>+Storage: POST {url} with fields + file
+    Storage->>Storage: Validate policy (mime, size, expiry)
+    Storage->>Storage: Store object at key
+    Storage-->>-Browser: 204 No Content
+
+    Browser->>+API: POST /blocks/{blockId}/file {fileId} [Bearer token]
+    API->>+DB: SELECT block, page WHERE blockId
+    DB-->>-API: Block found
+    API->>+AuthZ: Can(userId, pageId, "edit")?
+    AuthZ-->>-API: true
+    API->>API: Validate block.type = "file"
+    API->>API: Validate file.orgId = page.orgId
+    API->>+DB: INSERT INTO file_blocks (blockId, fileId)
+    DB-->>-API: Association created
+    API-->>-Browser: 204 No Content
+
+    %% Sequence 6: Share Page
+    Note over Browser,DB: SharePage Flow
+    Browser->>+API: POST /pages/{pageId}/shares {capability, expiresAt} [Bearer token]
+    API->>+AuthZ: Can(userId, pageId, "admin")?
+    AuthZ-->>-API: true
+    API->>API: Generate random token (48 bytes)
+    API->>API: Hash token with SHA256
+    API->>+DB: BEGIN TRANSACTION
+    API->>DB: INSERT INTO share_links (id, resourceId=pageId, capability, token_hash, expiresAt, createdBy)
+    DB-->>-API: COMMIT
+    API-->>-Browser: {id, token (cleartext), capability, expiresAt}
+
+    Note over Browser: Token never retrievable again
+
+    %% Sequence 7: Revoke Share
+    Note over Browser,DB: RevokeShare Flow
+    Browser->>+API: DELETE /shares/{shareId} [Bearer token]
+    API->>+DB: SELECT share_link, resource WHERE shareId
+    DB-->>-API: Share link found
+    API->>+AuthZ: Can(userId, resourceId, "admin")?
+    AuthZ-->>-API: true
+    API->>+DB: DELETE FROM share_links WHERE id=shareId
+    DB-->>-API: Deleted
+    API-->>-Browser: 204 No Content

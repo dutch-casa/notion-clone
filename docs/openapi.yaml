@@ -1,0 +1,811 @@
+openapi: 3.0.3
+info:
+  title: Collaborative Notion-like Teaching Reference API
+  version: 1.0.0
+  description: |
+    RESTful API for collaborative document editing with DDD, Clean Architecture, and CRDT-based real-time sync.
+
+    ## Authentication
+    All endpoints require Bearer token authentication except /auth/login and /auth/register.
+
+    ## Rate Limiting
+    Not implemented in MVP.
+
+    ## Versioning
+    API version in path (future: /v1/orgs).
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://api.notion-clone.example.com
+    description: Production
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Register new user
+      operationId: register
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      summary: Authenticate user
+      operationId: login
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orgs:
+    post:
+      summary: Create organization
+      operationId: createOrg
+      tags: [Organizations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrgRequest'
+      responses:
+        '201':
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      summary: List user's organizations
+      operationId: listOrgs
+      tags: [Organizations]
+      responses:
+        '200':
+          description: List of organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrgDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orgs/{id}:
+    get:
+      summary: Get organization details
+      operationId: getOrg
+      tags: [Organizations]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Organization details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgDetailDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orgs/{id}/members:
+    post:
+      summary: Invite member to organization
+      operationId: inviteMember
+      tags: [Organizations]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteMemberRequest'
+      responses:
+        '204':
+          description: Member invited successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    get:
+      summary: List organization members
+      operationId: listMembers
+      tags: [Organizations]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: List of members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MemberDto'
+
+  /orgs/{id}/pages:
+    post:
+      summary: Create page in organization
+      operationId: createPage
+      tags: [Documents]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePageRequest'
+      responses:
+        '201':
+          description: Page created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      summary: List pages in organization
+      operationId: listPages
+      tags: [Documents]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: List of pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PageDto'
+
+  /pages/{id}:
+    get:
+      summary: Get page details
+      operationId: getPage
+      tags: [Documents]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Page details with blocks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageDetailDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /pages/{id}/blocks:
+    post:
+      summary: Add block to page
+      operationId: appendBlock
+      tags: [Documents]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppendBlockRequest'
+      responses:
+        '201':
+          description: Block created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /pages/{id}/blocks/{blockId}:move:
+    patch:
+      summary: Move block to new position
+      operationId: moveBlock
+      tags: [Documents]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: blockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveBlockRequest'
+      responses:
+        '204':
+          description: Block moved successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /pages/{id}/crdt:update:
+    post:
+      summary: Apply CRDT update (alternative to SignalR)
+      operationId: applyCrdtUpdate
+      tags: [CRDT]
+      description: |
+        REST endpoint for CRDT updates. Real-time collaboration should use SignalR hub instead.
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: byte
+      responses:
+        '202':
+          description: Update accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  seq:
+                    type: integer
+                    format: int64
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /pages/{id}/crdt:state:
+    get:
+      summary: Get CRDT document state
+      operationId: getCrdtState
+      tags: [CRDT]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: CRDT state snapshot
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: byte
+
+  /pages/{id}/shares:
+    post:
+      summary: Create share link for page
+      operationId: sharePage
+      tags: [Sharing]
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharePageRequest'
+      responses:
+        '201':
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareLinkDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /shares/{shareId}:
+    delete:
+      summary: Revoke share link
+      operationId: revokeShare
+      tags: [Sharing]
+      parameters:
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Share link revoked
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /files:presign:
+    post:
+      summary: Get presigned URL for file upload
+      operationId: presignFile
+      tags: [Files]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignFileRequest'
+      responses:
+        '200':
+          description: Presigned URL generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /blocks/{blockId}/file:
+    post:
+      summary: Attach file to block
+      operationId: attachFileToBlock
+      tags: [Files]
+      parameters:
+        - name: blockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachFileRequest'
+      responses:
+        '204':
+          description: File attached successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /files/{fileId}/download-url:
+    get:
+      summary: Get presigned URL for file download
+      operationId: getFileDownloadUrl
+      tags: [Files]
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Presigned download URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # Authentication
+    RegisterRequest:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserDto'
+
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+
+    # Organizations
+    CreateOrgRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    OrgDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        ownerId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    OrgDetailDto:
+      allOf:
+        - $ref: '#/components/schemas/OrgDto'
+        - type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/MemberDto'
+
+    InviteMemberRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [owner, admin, member]
+
+    MemberDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [owner, admin, member]
+        joinedAt:
+          type: string
+          format: date-time
+
+    # Documents
+    CreatePageRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+
+    PageDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    PageDetailDto:
+      allOf:
+        - $ref: '#/components/schemas/PageDto'
+        - type: object
+          properties:
+            blocks:
+              type: array
+              items:
+                $ref: '#/components/schemas/BlockDto'
+
+    AppendBlockRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [paragraph, heading, todo, file]
+        parentBlockId:
+          type: string
+          format: uuid
+          nullable: true
+        before:
+          type: string
+          format: uuid
+          nullable: true
+        after:
+          type: string
+          format: uuid
+          nullable: true
+        json:
+          type: object
+          nullable: true
+
+    BlockDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pageId:
+          type: string
+          format: uuid
+        parentBlockId:
+          type: string
+          format: uuid
+          nullable: true
+        sortKey:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [paragraph, heading, todo, file]
+        json:
+          type: object
+
+    MoveBlockRequest:
+      type: object
+      properties:
+        parentBlockId:
+          type: string
+          format: uuid
+          nullable: true
+        before:
+          type: string
+          format: uuid
+          nullable: true
+        after:
+          type: string
+          format: uuid
+          nullable: true
+
+    # Sharing
+    SharePageRequest:
+      type: object
+      required: [capability]
+      properties:
+        capability:
+          type: string
+          enum: [view, comment, edit, admin]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ShareLinkDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        token:
+          type: string
+          description: Only returned at creation, never retrievable again
+        capability:
+          type: string
+          enum: [view, comment, edit, admin]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        pageId:
+          type: string
+          format: uuid
+
+    # Files
+    PresignFileRequest:
+      type: object
+      required: [mime, size, filename]
+      properties:
+        mime:
+          type: string
+        size:
+          type: integer
+          format: int64
+        filename:
+          type: string
+
+    PresignResponse:
+      type: object
+      properties:
+        fileId:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    AttachFileRequest:
+      type: object
+      required: [fileId]
+      properties:
+        fileId:
+          type: string
+          format: uuid
+
+    # Error
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+tags:
+  - name: Authentication
+    description: User registration and login
+  - name: Organizations
+    description: Organization and member management
+  - name: Documents
+    description: Page and block operations
+  - name: CRDT
+    description: Real-time collaborative editing
+  - name: Sharing
+    description: Share link management
+  - name: Files
+    description: File upload and attachment
