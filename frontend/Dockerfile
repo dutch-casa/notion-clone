@@ -12,7 +12,7 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Set API URL for production build
-ARG VITE_API_BASE_URL=https://notion.dutchcaz.com
+ARG VITE_API_BASE_URL=https://api.notion.dutchcaz.com
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 # Build the application
