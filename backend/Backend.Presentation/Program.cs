@@ -194,6 +194,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:3000", "http://localhost:5173" };
 
+// Log configured origins for debugging
+Console.WriteLine($"Configured CORS origins: {string.Join(", ", allowedOrigins)}");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -201,7 +204,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials(); // Required for SignalR
+              .AllowCredentials() // Required for SignalR
+              .SetIsOriginAllowedToAllowWildcardSubdomains();
     });
 });
 
@@ -217,13 +221,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// CORS must be before UseHttpsRedirection, UseAuthentication, and UseAuthorization
+// CORS must be first to handle preflight requests
 app.UseCors("AllowFrontend");
 
 // Global exception handler - must be early in pipeline to catch all exceptions
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
-app.UseHttpsRedirection();
+// Skip HTTPS redirection in production when behind a reverse proxy (Traefik handles HTTPS)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // HSTS for production environments
 if (!app.Environment.IsDevelopment())
