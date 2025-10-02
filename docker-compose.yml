@@ -80,9 +80,9 @@ services:
     container_name: notionclone-backend
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      ASPNETCORE_URLS: http://+:8081
+      ASPNETCORE_URLS: http://0.0.0.0:8081
       ConnectionStrings__DefaultConnection: Host=postgres;Database=${POSTGRES_DB:-notionclone};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
-      Redis__Configuration: redis:6379
+      ConnectionStrings__Redis: redis:6379
       MinIO__Endpoint: minio:9000
       MinIO__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin}
@@ -103,11 +103,11 @@ services:
       minio:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 120s
     restart: unless-stopped
     networks:
       - notionclone-network
