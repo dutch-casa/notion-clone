@@ -17,3 +17,4 @@
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Infrastructure/obj/Debug/net9.0/Backend.Infrastructure.pdb
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Infrastructure/obj/Debug/net9.0/Backend.Infrastructure.genruntimeconfig.cache
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Infrastructure/obj/Debug/net9.0/ref/Backend.Infrastructure.dll
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Infrastructure/obj/Debug/net9.0/Backend.Infrastructure.sourcelink.json

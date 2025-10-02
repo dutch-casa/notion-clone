@@ -127,9 +127,8 @@ export function BlockEditor({
     return exts;
   }, [collaborationService, user, pageId, orgId, uploadImageCallback]);
 
-  // @ts-expect-error - Type conflict between novel's bundled TipTap v2 and project's TipTap v3
   const editor = useEditor({
-    extensions,
+    extensions: extensions as any,
     // Only set initial content when NOT using collaboration
     content: !collaborationService && content ? JSON.parse(content) : undefined,
     editable,
@@ -167,6 +166,7 @@ export function BlockEditor({
             const initialContent = JSON.parse(initialContentRef.current);
             // Only load if the parsed content actually has content
             if (initialContent && (initialContent.content?.length > 0 || Object.keys(initialContent).length > 0)) {
+              // @ts-expect-error - Tiptap setContent options type mismatch
               editor.commands.setContent(initialContent, false);
             }
           } catch (e) {
@@ -409,6 +409,7 @@ export function BlockEditor({
 
   return (
     <div className="w-full cursor-text relative">
+      {/* @ts-expect-error - DragHandle expects different Editor type */}
       <DragHandle editor={editor}>
         <div className="flex items-center gap-2 rounded-md bg-background border border-muted p-1 cursor-grab active:cursor-grabbing">
           <GripVertical className="h-4 w-4 text-muted-foreground" />

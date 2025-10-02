@@ -9,3 +9,4 @@
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/refint/Backend.Domain.dll
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/Backend.Domain.pdb
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/ref/Backend.Domain.dll
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Domain/obj/Debug/net9.0/Backend.Domain.sourcelink.json

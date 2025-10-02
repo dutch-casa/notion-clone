@@ -13,3 +13,4 @@
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Application/obj/Debug/net9.0/refint/Backend.Application.dll
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Application/obj/Debug/net9.0/Backend.Application.pdb
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Application/obj/Debug/net9.0/ref/Backend.Application.dll
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Application/obj/Debug/net9.0/Backend.Application.sourcelink.json

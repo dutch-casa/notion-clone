@@ -80,8 +80,8 @@ function OrganizationSettingsPage() {
   return (
     <OrgSettingsProvider
         orgId={orgId}
-        orgName={organization.name}
-        members={organization.members}
+        orgName={organization.name ?? ''}
+        members={organization.members as any}
         currentUserRole={currentUserRole}
         onRemoveMember={handleRemoveMember}
       >

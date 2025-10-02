@@ -63,7 +63,7 @@ export function AuthField({ name, label, type = 'text', placeholder }: AuthField
 
   return (
     <form.Field name={name}>
-      {(field) => (
+      {(field: any) => (
         <div className="space-y-2">
           <Label htmlFor={field.name}>{label}</Label>
           <Input

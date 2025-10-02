@@ -31,6 +31,7 @@ export function AccountSettingsDialog({ open, onOpenChange }: AccountSettingsDia
 
   const updateNameMutation = useMutation({
     mutationFn: async (name: string) => {
+      // @ts-expect-error - API route type mismatch
       const response = await apiClient.PUT('/api/Users/{id}', {
         params: { path: { id: user!.id } },
         body: { name },

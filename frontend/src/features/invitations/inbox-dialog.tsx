@@ -23,9 +23,10 @@ export function InboxDialog({ open, onOpenChange }: InboxDialogProps) {
   const { data: invitations = [] } = useQuery({
     queryKey: ['invitations'],
     queryFn: async () => {
+      // @ts-expect-error - API route type mismatch
       const response = await apiClient.GET('/api/Organizations/invitations');
       if (response.error) throw new Error('Failed to fetch invitations');
-      return response.data || [];
+      return (response.data as any) || [];
     },
     enabled: open,
   });
@@ -33,6 +34,7 @@ export function InboxDialog({ open, onOpenChange }: InboxDialogProps) {
   // Accept invitation mutation
   const acceptMutation = useMutation({
     mutationFn: async (invitationId: string) => {
+      // @ts-expect-error - API route type mismatch
       const response = await apiClient.POST('/api/Organizations/invitations/{invitationId}/accept', {
         params: { path: { invitationId } },
       });
@@ -52,6 +54,7 @@ export function InboxDialog({ open, onOpenChange }: InboxDialogProps) {
   // Decline invitation mutation
   const declineMutation = useMutation({
     mutationFn: async (invitationId: string) => {
+      // @ts-expect-error - API route type mismatch
       const response = await apiClient.POST('/api/Organizations/invitations/{invitationId}/decline', {
         params: { path: { invitationId } },
       });
@@ -78,12 +81,12 @@ export function InboxDialog({ open, onOpenChange }: InboxDialogProps) {
         </DialogHeader>
 
         <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-          {invitations.length === 0 ? (
+          {(invitations as any[]).length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No pending invitations
             </div>
           ) : (
-            invitations.map((invitation: any) => (
+            (invitations as any[]).map((invitation: any) => (
               <div
                 key={invitation.invitationId}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"

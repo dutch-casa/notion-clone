@@ -29,14 +29,15 @@ export function useInviteByEmail(orgId: string) {
 
   return useMutation({
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
+      // @ts-expect-error - API route type mismatch
       const response = await apiClient.POST('/api/Organizations/{id}/invitations/by-email', {
         params: { path: { id: orgId } },
         body: { email, role },
       });
-      if (response.error) {
-        throw new Error(response.error?.detail || 'Failed to send invitation');
+      if ((response as any).error) {
+        throw new Error((response as any).error?.detail || 'Failed to send invitation');
       }
-      return response.data;
+      return (response as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', orgId] });

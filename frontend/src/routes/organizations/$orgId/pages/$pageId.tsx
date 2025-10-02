@@ -125,7 +125,7 @@ function PageEditor() {
 
   // Sync localTitle with page data from React Query (only if not actively editing)
   useLayoutEffect(() => {
-    if (page?.title !== undefined && !isEditingTitle) {
+    if (page?.title !== undefined && page?.title !== null && !isEditingTitle) {
       setLocalTitle(page.title);
     }
   }, [page?.title, pageId, isEditingTitle]);
@@ -230,7 +230,7 @@ function PageEditor() {
           key={pageId}
           content={page?.blocks?.[0]?.json || ''}
           placeholder="Type '/' for commands..."
-          collaborationService={collaborationService}
+          collaborationService={collaborationService || undefined}
           user={user ? { id: user.id, name: user.name, color: getUserColor(user.id) } : undefined}
           pageId={pageId}
           orgId={orgId}

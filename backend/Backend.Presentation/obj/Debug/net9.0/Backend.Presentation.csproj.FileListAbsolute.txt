@@ -163,3 +163,4 @@
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Presentation/bin/Debug/net9.0/Minio.dll
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Presentation/bin/Debug/net9.0/System.IO.Hashing.dll
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Presentation/bin/Debug/net9.0/System.Reactive.dll
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Presentation/obj/Debug/net9.0/Backend.Presentation.sourcelink.json

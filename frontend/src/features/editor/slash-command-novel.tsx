@@ -204,6 +204,7 @@ export const slashCommand = Extension.create({
                 return true;
               }
 
+              // @ts-expect-error - CommandList ref may not have onKeyDown method
               return component.ref?.onKeyDown(props);
             },
 

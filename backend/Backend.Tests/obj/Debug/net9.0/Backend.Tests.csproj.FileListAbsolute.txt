@@ -148,3 +148,4 @@
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Tests/bin/Debug/net9.0/Minio.dll
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Tests/bin/Debug/net9.0/System.IO.Hashing.dll
 /Users/dutchcaz/Projects/notion-clone/backend/Backend.Tests/bin/Debug/net9.0/System.Reactive.dll
+/Users/dutchcaz/Projects/notion-clone/backend/Backend.Tests/obj/Debug/net9.0/Backend.Tests.sourcelink.json
