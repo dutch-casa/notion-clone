@@ -235,4 +235,7 @@ app.MapControllers();
 // Map SignalR hub
 app.MapHub<DocumentHub>("/hubs/document");
 
+// Health check endpoint
+app.MapHealthChecks("/health");
+
 app.Run();
