@@ -117,6 +117,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.notion.dutchcaz.com}
     container_name: notionclone-frontend
     ports:
       - "${FRONTEND_PORT:-3000}:8080"
