@@ -93,9 +93,12 @@ services:
       Jwt__Issuer: ${JWT_ISSUER:-NotionClone}
       Jwt__Audience: ${JWT_AUDIENCE:-NotionCloneUsers}
       Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
-      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGINS:-https://notion.dutchcaz.com}
     ports:
       - "${BACKEND_PORT:-8081}:8081"
+    labels:
+      - "traefik.http.routers.backend.rule=Host(`notion.dutchcaz.com`) && PathPrefix(`/api`, `/hubs`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
     depends_on:
       postgres:
         condition: service_healthy
