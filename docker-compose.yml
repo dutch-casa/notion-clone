@@ -80,7 +80,9 @@ services:
       dockerfile: Dockerfile
     container_name: notionclone-backend
     labels:
-      - "coolify.port=8081"
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.notion.dutchcaz.com`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://0.0.0.0:8081
@@ -122,6 +124,7 @@ services:
     restart: unless-stopped
     networks:
       - notionclone-network
+      - coolify
 
   frontend:
     build:
@@ -129,7 +132,9 @@ services:
       dockerfile: Dockerfile
     container_name: notionclone-frontend
     labels:
-      - "coolify.port=8080"
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`notion.dutchcaz.com`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=8080"
     ports:
       - "${FRONTEND_PORT:-3000}:8080"
     depends_on:
@@ -151,6 +156,7 @@ services:
     restart: unless-stopped
     networks:
       - notionclone-network
+      - coolify
 
 volumes:
   postgres_data:
@@ -163,3 +169,5 @@ volumes:
 networks:
   notionclone-network:
     driver: bridge
+  coolify:
+    external: true
