@@ -59,7 +59,7 @@ EXPOSE 8081
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8081/health || exit 1
 
 # Run application with migrations
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
