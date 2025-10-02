@@ -120,6 +120,8 @@ services:
     container_name: notionclone-frontend
     ports:
       - "${FRONTEND_PORT:-3000}:8080"
+    labels:
+      - "traefik.http.services.frontend.loadbalancer.server.port=8080"
     depends_on:
       backend:
         condition: service_healthy
