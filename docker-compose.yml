@@ -70,6 +70,7 @@ services:
       mc anonymous set download minio/${MINIO_BUCKET_NAME:-notionclone-uploads};
       exit 0;
       "
+    restart: "no"
     networks:
       - notionclone-network
 
