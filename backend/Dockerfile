@@ -27,16 +27,25 @@ COPY --from=build /app/publish .
 # Copy source files needed for migrations
 COPY --from=build /src /src
 
+# Build the projects in /src so --no-build works for EF migrations
+WORKDIR /src
+RUN dotnet restore Backend.Presentation/Backend.Presentation.csproj && \
+    dotnet build Backend.Presentation/Backend.Presentation.csproj -c Release
+
+# Set DOTNET_ENVIRONMENT to match ASPNETCORE_ENVIRONMENT for EF design-time
+ENV DOTNET_ENVIRONMENT=Production
+
 # Create non-root user for security
 RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
 
 # Create startup script that runs migrations then starts the app
+WORKDIR /app
 RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
     echo 'set -e' >> /app/docker-entrypoint.sh && \
     echo '' >> /app/docker-entrypoint.sh && \
     echo 'echo "Running database migrations..."' >> /app/docker-entrypoint.sh && \
     echo 'cd /src' >> /app/docker-entrypoint.sh && \
-    echo 'dotnet ef database update --project Backend.Infrastructure/Backend.Infrastructure.csproj --startup-project Backend.Presentation/Backend.Presentation.csproj --configuration Release --no-build || echo "Migration failed, continuing anyway..."' >> /app/docker-entrypoint.sh && \
+    echo 'dotnet ef database update --project Backend.Infrastructure/Backend.Infrastructure.csproj --startup-project Backend.Presentation/Backend.Presentation.csproj --configuration Release --no-build' >> /app/docker-entrypoint.sh && \
     echo 'echo "Migrations completed"' >> /app/docker-entrypoint.sh && \
     echo '' >> /app/docker-entrypoint.sh && \
     echo 'cd /app' >> /app/docker-entrypoint.sh && \
