@@ -59,6 +59,8 @@ services:
       dockerfile: Dockerfile
     expose:
       - "8081"
+    labels:
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: "http://0.0.0.0:8081"
@@ -96,6 +98,8 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     expose:
       - "8080"
+    labels:
+      - "traefik.http.services.frontend.loadbalancer.server.port=8080"
     depends_on:
       backend:
         condition: service_healthy
