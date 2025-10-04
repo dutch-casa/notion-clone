@@ -11,11 +11,9 @@ RUN bun install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Set API URL for production build
-ARG VITE_API_BASE_URL=https://api.notion.dutchcaz.com
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
-
 # Build the application
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN bun run build
 
 # Runtime stage
@@ -31,20 +29,12 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built app from build stage
 COPY --from=build /app/dist .
 
-# Create non-root user for security
-RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
-
-# Set ownership
-RUN chown -R appuser:appuser /usr/share/nginx/html && \
-    chown -R appuser:appuser /var/cache/nginx && \
-    chown -R appuser:appuser /var/log/nginx && \
-    chown -R appuser:appuser /etc/nginx/conf.d
-
-# Modify nginx to run as non-root
-RUN touch /var/run/nginx.pid && \
+# Create non-root user
+RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
     chown -R appuser:appuser /var/run/nginx.pid
 
-# Switch to non-root user
 USER appuser
 
 # Expose port

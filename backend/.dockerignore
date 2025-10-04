@@ -1,45 +1,14 @@
-# Build artifacts
 **/bin/
 **/obj/
-**/out/
-**/publish/
-
-# Development files
 **/.vs/
 **/.vscode/
-**/*.user
-**/*.suo
 **/.idea/
 **/.DS_Store
-
-# Test projects
-Backend.Tests/
-**/TestResults/
-**/*.trx
-
-# Git
+*.user
+*.suo
+**/*.md
 .git/
 .gitignore
-.gitattributes
-
-# Documentation
-*.md
-LICENSE
-
-# Environment files
-.env
-.env.*
-!.env.example
-**/appsettings.Development.json
-
-# Docker files (don't need in image)
 Dockerfile
 .dockerignore
 docker-compose*.yml
-
-# CI/CD
-.github/
-
-# Logs
-**/logs/
-**/*.log

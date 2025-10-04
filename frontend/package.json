@@ -10,7 +10,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "preview": "vite preview",
-    "generate:types": "openapi-typescript http://localhost:5036/swagger/v1/swagger.json -o src/types/api.ts"
+    "generate:types": "openapi-typescript http://localhost:5036/swagger/v1/swagger.json -o src/lib/api/schema.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

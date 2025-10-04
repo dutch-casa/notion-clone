@@ -14,8 +14,8 @@ COPY . .
 WORKDIR /src/Backend.Presentation
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
-# Runtime stage - using SDK image to run migrations
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS final
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
 WORKDIR /app
 
 # Install dependencies
@@ -24,43 +24,11 @@ RUN apk add --no-cache icu-libs
 # Copy published app
 COPY --from=build /app/publish .
 
-# Copy source files needed for migrations
-COPY --from=build /src /src
+# Create non-root user
+RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
 
-# Build the projects in /src so --no-build works for EF migrations
-WORKDIR /src
-RUN dotnet restore Backend.Presentation/Backend.Presentation.csproj && \
-    dotnet build Backend.Presentation/Backend.Presentation.csproj -c Release
-
-# Create non-root user for security
-RUN addgroup -g 1000 appuser && adduser -D -u 1000 -G appuser appuser
-
-# Create startup script that runs migrations then starts the app
-WORKDIR /app
-RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
-    echo 'set -e' >> /app/docker-entrypoint.sh && \
-    echo '' >> /app/docker-entrypoint.sh && \
-    echo 'echo "Running database migrations..."' >> /app/docker-entrypoint.sh && \
-    echo 'cd /src' >> /app/docker-entrypoint.sh && \
-    echo '# Build connection string from env vars for EF design-time' >> /app/docker-entrypoint.sh && \
-    echo 'CONNECTION_STRING="${ConnectionStrings__DefaultConnection}"' >> /app/docker-entrypoint.sh && \
-    echo 'dotnet ef database update --connection "$CONNECTION_STRING" --project Backend.Infrastructure/Backend.Infrastructure.csproj --startup-project Backend.Presentation/Backend.Presentation.csproj --configuration Release --no-build' >> /app/docker-entrypoint.sh && \
-    echo 'echo "Migrations completed"' >> /app/docker-entrypoint.sh && \
-    echo '' >> /app/docker-entrypoint.sh && \
-    echo 'cd /app' >> /app/docker-entrypoint.sh && \
-    echo 'echo "Starting application..."' >> /app/docker-entrypoint.sh && \
-    echo 'exec dotnet Backend.Presentation.dll "$@"' >> /app/docker-entrypoint.sh && \
-    chmod +x /app/docker-entrypoint.sh
-
-# Set ownership
-RUN chown -R appuser:appuser /app /src
-
-# Switch to non-root user to install dotnet-ef for that user
 USER appuser
-
-# Install EF Core tools globally for appuser
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="${PATH}:/home/appuser/.dotnet/tools"
 
 # Expose port
 EXPOSE 8081
@@ -69,5 +37,5 @@ EXPOSE 8081
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8081/health || exit 1
 
-# Run application with migrations
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# Run application (migrations will run in Program.cs)
+ENTRYPOINT ["dotnet", "Backend.Presentation.dll"]

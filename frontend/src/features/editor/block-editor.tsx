@@ -160,8 +160,8 @@ export function BlockEditor({
         // 2. Server had no CRDT state (wasServerEmpty)
         // 3. We have DB content to load
         if (editor.isEmpty &&
-            collaborationService.wasServerEmpty() &&
-            initialContentRef.current) {
+          collaborationService.wasServerEmpty() &&
+          initialContentRef.current) {
           try {
             const initialContent = JSON.parse(initialContentRef.current);
             // Only load if the parsed content actually has content
@@ -198,7 +198,7 @@ export function BlockEditor({
   // Subscribe to awareness changes for cursor visualization
   const awarenessStates = useSyncExternalStore(
     (callback) => {
-      if (!collaborationService) return () => {};
+      if (!collaborationService) return () => { };
       return collaborationService.subscribeToAwareness(callback);
     },
     getSnapshot,
