@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { API_BASE_URL } from '@/lib/config';
 
 interface User {
   id: string;
@@ -33,7 +34,7 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         // Call backend to clear HttpOnly cookie
         try {
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5036'}/api/auth/logout`, {
+          await fetch(`${API_BASE_URL}/api/auth/logout`, {
             method: 'POST',
             credentials: 'include',
           });
@@ -51,7 +52,7 @@ export const useAuthStore = create<AuthState>()(
 
       fetchToken: async () => {
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5036'}/api/auth/token`, {
+          const response = await fetch(`${API_BASE_URL}/api/auth/token`, {
             credentials: 'include',
           });
 
