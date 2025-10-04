@@ -87,7 +87,8 @@ public class AuthController : ControllerBase
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.None
+            SameSite = SameSiteMode.None,
+            Domain = ".dutchcaz.com"
         });
         return Ok(new { message = "Logged out successfully" });
     }
@@ -99,6 +100,7 @@ public class AuthController : ControllerBase
             HttpOnly = true, // Prevents JavaScript access (XSS protection)
             Secure = true,   // Required for SameSite=None and HTTPS
             SameSite = SameSiteMode.None, // Required for cross-origin cookies (different subdomains)
+            Domain = ".dutchcaz.com", // Share cookie across all dutchcaz.com subdomains
             Expires = DateTimeOffset.UtcNow.AddDays(7) // Match JWT expiration
         };
 
