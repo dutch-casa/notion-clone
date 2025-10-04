@@ -83,7 +83,12 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete("auth_token");
+        Response.Cookies.Delete("auth_token", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None
+        });
         return Ok(new { message = "Logged out successfully" });
     }
 
@@ -92,8 +97,8 @@ public class AuthController : ControllerBase
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true, // Prevents JavaScript access (XSS protection)
-            Secure = false,  // Set to true in production with HTTPS
-            SameSite = SameSiteMode.Lax, // Changed to Lax for development cross-origin
+            Secure = true,   // Required for SameSite=None and HTTPS
+            SameSite = SameSiteMode.None, // Required for cross-origin cookies (different subdomains)
             Expires = DateTimeOffset.UtcNow.AddDays(7) // Match JWT expiration
         };
 
