@@ -15,6 +15,7 @@ interface AuthState {
   login: (user: User, token: string) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
+  fetchToken: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -46,6 +47,21 @@ export const useAuthStore = create<AuthState>()(
         set((state) => ({
           user: state.user ? { ...state.user, ...updatedFields } : null,
         }));
+      },
+
+      fetchToken: async () => {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5036'}/api/auth/token`, {
+            credentials: 'include',
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            set({ token: data.token });
+          }
+        } catch (error) {
+          console.error('Failed to fetch token:', error);
+        }
       },
     }),
     {

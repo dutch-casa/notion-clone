@@ -29,6 +29,7 @@ export function useInvitationNotifications({
   const mountedRef = useRef(true);
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
+  const fetchToken = useAuthStore((state) => state.fetchToken);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -39,7 +40,13 @@ export function useInvitationNotifications({
 
   useEffect(() => {
     // Only connect if enabled and user is authenticated
-    if (!enabled || !user || !token) {
+    if (!enabled || !user) {
+      return;
+    }
+
+    // If user exists but token is missing, fetch it from cookie
+    if (!token) {
+      fetchToken();
       return;
     }
 
@@ -108,7 +115,7 @@ export function useInvitationNotifications({
         reconnectTimeoutRef.current = null;
       }
     };
-  }, [enabled, user, token, onNotification]);
+  }, [enabled, user, token, onNotification, fetchToken]);
 
   return {
     isConnected: !!eventSourceRef.current && eventSourceRef.current.readyState === EventSource.OPEN,

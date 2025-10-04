@@ -77,6 +77,24 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Get token from cookie - for SSE/EventSource which can't read HttpOnly cookies
+    /// </summary>
+    [HttpGet("token")]
+    [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult GetToken()
+    {
+        var token = Request.Cookies["auth_token"];
+
+        if (string.IsNullOrEmpty(token))
+        {
+            return Unauthorized();
+        }
+
+        return Ok(new TokenResponseDto { Token = token });
+    }
+
+    /// <summary>
     /// Logout - Clear auth cookie
     /// </summary>
     [HttpPost("logout")]
@@ -148,4 +166,9 @@ public record UserDto
     public required Guid Id { get; init; }
     public required string Email { get; init; }
     public required string Name { get; init; }
+}
+
+public record TokenResponseDto
+{
+    public required string Token { get; init; }
 }

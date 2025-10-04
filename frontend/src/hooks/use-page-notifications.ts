@@ -32,6 +32,7 @@ export function usePageNotifications({
   const mountedRef = useRef(true);
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
+  const fetchToken = useAuthStore((state) => state.fetchToken);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -42,7 +43,13 @@ export function usePageNotifications({
 
   useEffect(() => {
     // Only connect if enabled, user is authenticated, and orgId is provided
-    if (!enabled || !user || !orgId || !token) {
+    if (!enabled || !user || !orgId) {
+      return;
+    }
+
+    // If user exists but token is missing, fetch it from cookie
+    if (!token) {
+      fetchToken();
       return;
     }
 
@@ -118,7 +125,7 @@ export function usePageNotifications({
         reconnectTimeoutRef.current = null;
       }
     };
-  }, [enabled, user, orgId, token, onNotification]);
+  }, [enabled, user, orgId, token, onNotification, fetchToken]);
 
   return {
     isConnected: !!eventSourceRef.current && eventSourceRef.current.readyState === EventSource.OPEN,
