@@ -83,26 +83,41 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete("auth_token", new CookieOptions
+        var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
+        var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Domain = ".dutchcaz.com"
-        });
+            Secure = !isDevelopment,
+            SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None,
+        };
+
+        if (!isDevelopment)
+        {
+            cookieOptions.Domain = ".dutchcaz.com";
+        }
+
+        Response.Cookies.Delete("auth_token", cookieOptions);
         return Ok(new { message = "Logged out successfully" });
     }
 
     private void SetAuthCookie(string token)
     {
+        var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true, // Prevents JavaScript access (XSS protection)
-            Secure = true,   // Required for SameSite=None and HTTPS
-            SameSite = SameSiteMode.None, // Required for cross-origin cookies (different subdomains)
-            Domain = ".dutchcaz.com", // Share cookie across all dutchcaz.com subdomains
+            Secure = !isDevelopment,   // Allow HTTP in development
+            SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None, // Lax for localhost
             Expires = DateTimeOffset.UtcNow.AddDays(7) // Match JWT expiration
         };
+
+        // Only set Domain for production (not localhost)
+        if (!isDevelopment)
+        {
+            cookieOptions.Domain = ".dutchcaz.com";
+        }
 
         Response.Cookies.Append("auth_token", token, cookieOptions);
     }
