@@ -42,7 +42,9 @@ RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
     echo '' >> /app/docker-entrypoint.sh && \
     echo 'echo "Running database migrations..."' >> /app/docker-entrypoint.sh && \
     echo 'cd /src' >> /app/docker-entrypoint.sh && \
-    echo 'dotnet ef database update --project Backend.Infrastructure/Backend.Infrastructure.csproj --startup-project Backend.Presentation/Backend.Presentation.csproj --configuration Release --no-build' >> /app/docker-entrypoint.sh && \
+    echo '# Build connection string from env vars for EF design-time' >> /app/docker-entrypoint.sh && \
+    echo 'CONNECTION_STRING="${ConnectionStrings__DefaultConnection}"' >> /app/docker-entrypoint.sh && \
+    echo 'dotnet ef database update --connection "$CONNECTION_STRING" --project Backend.Infrastructure/Backend.Infrastructure.csproj --startup-project Backend.Presentation/Backend.Presentation.csproj --configuration Release --no-build' >> /app/docker-entrypoint.sh && \
     echo 'echo "Migrations completed"' >> /app/docker-entrypoint.sh && \
     echo '' >> /app/docker-entrypoint.sh && \
     echo 'cd /app' >> /app/docker-entrypoint.sh && \
