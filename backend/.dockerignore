@@ -30,6 +30,7 @@ LICENSE
 .env
 .env.*
 !.env.example
+**/appsettings.Development.json
 
 # Docker files (don't need in image)
 Dockerfile
