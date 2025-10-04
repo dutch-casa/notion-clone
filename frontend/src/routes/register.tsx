@@ -29,12 +29,12 @@ function RegisterPage() {
 
       const result = response.data as any;
 
-      // Token is now stored in HttpOnly cookie by the backend
+      // Token is stored in HttpOnly cookie AND in memory for SSE/EventSource
       login({
         id: result.user.id,
         email: result.user.email,
         name: result.user.name,
-      });
+      }, result.token);
 
       toast.success('Account created!', {
         description: `Welcome, ${result.user.name}!`,

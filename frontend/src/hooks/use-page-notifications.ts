@@ -31,6 +31,7 @@ export function usePageNotifications({
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -41,7 +42,7 @@ export function usePageNotifications({
 
   useEffect(() => {
     // Only connect if enabled, user is authenticated, and orgId is provided
-    if (!enabled || !user || !orgId) {
+    if (!enabled || !user || !orgId || !token) {
       return;
     }
 
@@ -53,12 +54,11 @@ export function usePageNotifications({
       if (!mountedRef.current) return;
 
       try {
-        // Create SSE connection - auth cookie is sent automatically with withCredentials: true
-        // Note: orgId is passed as query parameter, not route parameter
-        const url = `${API_BASE_URL}/api/Pages/stream?orgId=${orgId}`;
+        // Create SSE connection with token in query string (EventSource can't send cookies cross-origin)
+        const url = `${API_BASE_URL}/api/Pages/stream?orgId=${orgId}&access_token=${encodeURIComponent(token)}`;
 
         const eventSource = new EventSource(url, {
-          withCredentials: true, // Send HttpOnly cookies with the request
+          withCredentials: true, // Still needed for CORS
         });
 
         eventSourceRef.current = eventSource;
@@ -118,7 +118,7 @@ export function usePageNotifications({
         reconnectTimeoutRef.current = null;
       }
     };
-  }, [enabled, user, orgId, onNotification]);
+  }, [enabled, user, orgId, token, onNotification]);
 
   return {
     isConnected: !!eventSourceRef.current && eventSourceRef.current.readyState === EventSource.OPEN,

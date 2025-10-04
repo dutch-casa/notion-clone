@@ -9,9 +9,10 @@ interface User {
 
 interface AuthState {
   user: User | null;
+  token: string | null; // Store token for SSE/EventSource (can't use HttpOnly cookie)
   isAuthenticated: boolean;
 
-  login: (user: User) => void;
+  login: (user: User, token: string) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
 }
@@ -20,11 +21,12 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
 
-      login: (user) => {
-        // Token is now stored in HttpOnly cookie, not in localStorage
-        set({ user, isAuthenticated: true });
+      login: (user, token) => {
+        // Token stored in memory for SSE/EventSource (HttpOnly cookie can't be accessed by JS)
+        set({ user, token, isAuthenticated: true });
       },
 
       logout: async () => {
@@ -37,7 +39,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Logout error:', error);
         }
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, token: null, isAuthenticated: false });
       },
 
       updateUser: (updatedFields) => {
@@ -51,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        // No longer storing token in localStorage
+        // Don't persist token to localStorage for security
       }),
     }
   )

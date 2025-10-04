@@ -28,6 +28,7 @@ export function useInvitationNotifications({
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -38,7 +39,7 @@ export function useInvitationNotifications({
 
   useEffect(() => {
     // Only connect if enabled and user is authenticated
-    if (!enabled || !user) {
+    if (!enabled || !user || !token) {
       return;
     }
 
@@ -50,10 +51,10 @@ export function useInvitationNotifications({
       if (!mountedRef.current) return;
 
       try {
-        // Create SSE connection - auth cookie is sent automatically with withCredentials: true
-        const url = `${API_BASE_URL}/api/Organizations/invitations/stream`;
+        // Create SSE connection with token in query string (EventSource can't send cookies cross-origin)
+        const url = `${API_BASE_URL}/api/Organizations/invitations/stream?access_token=${encodeURIComponent(token)}`;
         const eventSource = new EventSource(url, {
-          withCredentials: true, // Send HttpOnly cookies with the request
+          withCredentials: true, // Still needed for CORS
         });
 
         eventSourceRef.current = eventSource;
@@ -107,7 +108,7 @@ export function useInvitationNotifications({
         reconnectTimeoutRef.current = null;
       }
     };
-  }, [enabled, user, onNotification]);
+  }, [enabled, user, token, onNotification]);
 
   return {
     isConnected: !!eventSourceRef.current && eventSourceRef.current.readyState === EventSource.OPEN,

@@ -167,14 +167,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 // First, try to get token from HttpOnly cookie
                 var token = context.Request.Cookies["auth_token"];
 
-                // Fallback to query string for SignalR (WebSocket upgrade) if no cookie
+                // Fallback to query string for SSE and SignalR (EventSource can't send cookies cross-origin)
                 if (string.IsNullOrEmpty(token))
                 {
                     var accessToken = context.Request.Query["access_token"];
                     var path = context.HttpContext.Request.Path;
 
-                    // Only allow query string tokens for SignalR hub during WebSocket upgrade
-                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/document"))
+                    // Allow query string tokens for SignalR and SSE stream endpoints
+                    if (!string.IsNullOrEmpty(accessToken) &&
+                        (path.StartsWithSegments("/hubs/document") ||
+                         path.Value?.Contains("/stream", StringComparison.OrdinalIgnoreCase) == true))
                     {
                         token = accessToken;
                     }
