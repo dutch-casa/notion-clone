@@ -15,7 +15,7 @@ function RegisterPage() {
   const handleRegister = async (values: Record<string, unknown>) => {
     try {
       // @ts-expect-error - API type generation mismatch
-      const response = await apiClient.POST('/api/Auth/register', {
+      const response = await apiClient.POST('/api/auth/register', {
         body: {
           email: values.email as string,
           password: values.password as string,

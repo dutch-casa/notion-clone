@@ -243,13 +243,14 @@ if (!app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Health check endpoint - must be before MapControllers
+app.MapHealthChecks("/health");
+
 app.MapControllers();
 
 // Map SignalR hub
 app.MapHub<DocumentHub>("/hubs/document");
-
-// Health check endpoint
-app.MapHealthChecks("/health");
 
 // Run database migrations on startup
 using (var scope = app.Services.CreateScope())

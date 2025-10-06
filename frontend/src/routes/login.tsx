@@ -15,7 +15,7 @@ function LoginPage() {
   const handleLogin = async (values: Record<string, unknown>) => {
     try {
       // @ts-expect-error - API type generation mismatch
-      const response = await apiClient.POST('/api/Auth/login', {
+      const response = await apiClient.POST('/api/auth/login', {
         body: {
           email: values.email as string,
           password: values.password as string,

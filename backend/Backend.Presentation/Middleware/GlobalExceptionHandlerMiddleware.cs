@@ -37,7 +37,7 @@ public class GlobalExceptionHandlerMiddleware
         var (statusCode, message) = exception switch
         {
             UnauthorizedAccessException => (
-                HttpStatusCode.Forbidden,
+                HttpStatusCode.Unauthorized,
                 exception.Message
             ),
             InvalidOperationException ex when ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) => (
@@ -66,6 +66,10 @@ public class GlobalExceptionHandlerMiddleware
         if (statusCode == HttpStatusCode.InternalServerError)
         {
             _logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
+        }
+        else if (statusCode == HttpStatusCode.Unauthorized)
+        {
+            _logger.LogWarning("Authentication failure: {Message}", exception.Message);
         }
         else if (statusCode == HttpStatusCode.Forbidden)
         {
