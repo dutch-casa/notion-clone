@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Backend.Application.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Backend.Infrastructure.Services;
 
@@ -14,9 +15,9 @@ public class PageNotificationService : IPageNotificationService
     // Dictionary of org ID to their notification channels
     private readonly ConcurrentDictionary<Guid, List<Channel<PageNotification>>> _orgChannels = new();
 
-    private readonly Microsoft.Extensions.Logging.ILogger<PageNotificationService> _logger;
+    private readonly ILogger<PageNotificationService> _logger;
 
-    public PageNotificationService(Microsoft.Extensions.Logging.ILogger<PageNotificationService> logger)
+    public PageNotificationService(ILogger<PageNotificationService> logger)
     {
         _logger = logger;
     }
