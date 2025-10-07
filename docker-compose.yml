@@ -70,10 +70,12 @@ services:
       - "8081"
     labels:
       - "traefik.http.services.backend.loadbalancer.server.port=8081"
-      # Disable buffering for SSE endpoints
-      - "traefik.http.middlewares.sse-headers.headers.customresponseheaders.X-Accel-Buffering=no"
-      - "traefik.http.middlewares.sse-headers.headers.customresponseheaders.Cache-Control=no-cache"
-      - "traefik.http.middlewares.sse-headers.buffering.retryExpression=IsNetworkError() && Attempts() < 2"
+      # Disable buffering for SSE endpoints - middleware definition
+      - "traefik.http.middlewares.sse-nobuffer.headers.customresponseheaders.X-Accel-Buffering=no"
+      - "traefik.http.middlewares.sse-nobuffer.headers.customresponseheaders.Cache-Control=no-cache"
+      - "traefik.http.middlewares.sse-nobuffer.buffering.retryExpression=IsNetworkError() && Attempts() < 2"
+      # Apply middleware to backend router (Coolify auto-generates router name)
+      - "traefik.http.routers.backend.middlewares=sse-nobuffer"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: "http://0.0.0.0:8081"
