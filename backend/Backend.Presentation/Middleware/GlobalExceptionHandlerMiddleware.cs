@@ -75,9 +75,16 @@ public class GlobalExceptionHandlerMiddleware
         {
             _logger.LogWarning("Authorization failure: {Message}", exception.Message);
         }
-        else
+        else if (exception is not OperationCanceledException)
         {
             _logger.LogInformation("Client error ({StatusCode}): {Message}", statusCode, exception.Message);
+        }
+
+        // If response has already started (e.g., SSE stream), we can't modify headers
+        if (context.Response.HasStarted)
+        {
+            _logger.LogWarning("Cannot handle exception, response has already started");
+            return;
         }
 
         // Only send detailed error messages in development
