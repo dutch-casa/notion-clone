@@ -166,6 +166,8 @@ public class PagesController : ControllerBase
         await Response.WriteAsync($": Connected to page notifications for org {orgId}\n\n", cancellationToken);
         await Response.Body.FlushAsync(cancellationToken);
 
+        var logger = HttpContext.RequestServices.GetRequiredService<ILogger<PagesController>>();
+
         await foreach (var notification in _pageNotificationService.SubscribeToPageNotificationsAsync(orgId, cancellationToken))
         {
             // Format as SSE data
@@ -174,8 +176,10 @@ public class PagesController : ControllerBase
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
 
+            logger.LogInformation("Writing SSE message to response: {EventType} for page {PageId}", notification.EventType, notification.PageId);
             await Response.WriteAsync($"data: {json}\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
+            logger.LogInformation("SSE message flushed to client");
         }
     }
 }
