@@ -69,8 +69,9 @@ services:
     expose:
       - "8081"
     labels:
-      - "traefik.http.services.backend.loadbalancer.server.port=8081"
-      # Disable response buffering at load balancer level for SSE streams
+      # Disable gzip middleware for SSE streaming - override Coolify's default
+      - "traefik.http.routers.https-0-lk84ccok8k80kskccksgcc80-backend.middlewares="
+      # Enable response streaming at service level
       - "traefik.http.services.backend.loadbalancer.responseforwarding.flushinterval=1ms"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
