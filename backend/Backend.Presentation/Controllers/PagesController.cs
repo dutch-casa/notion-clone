@@ -134,6 +134,7 @@ public class PagesController : ControllerBase
     /// Server-Sent Events endpoint for real-time page notifications
     /// </summary>
     [HttpGet("stream")]
+    [Microsoft.AspNetCore.Cors.EnableCors("AllowFrontend")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task StreamPageNotifications([FromQuery] Guid orgId, CancellationToken cancellationToken)
@@ -152,9 +153,14 @@ public class PagesController : ControllerBase
             throw new UnauthorizedAccessException("User does not have access to this organization");
         }
 
+        // Disable response buffering for SSE
+        var bufferingFeature = HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature>();
+        bufferingFeature?.DisableBuffering();
+
         Response.Headers.Add("Content-Type", "text/event-stream");
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
+        Response.Headers.Add("X-Accel-Buffering", "no"); // Disable nginx buffering
 
         // Send initial comment to establish connection
         await Response.WriteAsync($": Connected to page notifications for org {orgId}\n\n", cancellationToken);

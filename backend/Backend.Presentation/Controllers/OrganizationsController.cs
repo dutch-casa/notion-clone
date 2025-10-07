@@ -267,14 +267,20 @@ public class OrganizationsController : ControllerBase
     /// Server-Sent Events endpoint for real-time invitation notifications
     /// </summary>
     [HttpGet("invitations/stream")]
+    [Microsoft.AspNetCore.Cors.EnableCors("AllowFrontend")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task StreamInvitationNotifications(CancellationToken cancellationToken)
     {
         var userId = GetUserId();
 
+        // Disable response buffering for SSE
+        var bufferingFeature = HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature>();
+        bufferingFeature?.DisableBuffering();
+
         Response.Headers.Add("Content-Type", "text/event-stream");
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
+        Response.Headers.Add("X-Accel-Buffering", "no"); // Disable nginx buffering
 
         // Send initial comment to establish connection
         await Response.WriteAsync($": Connected to invitation notifications\n\n", cancellationToken);
