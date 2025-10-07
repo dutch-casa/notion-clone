@@ -190,7 +190,6 @@ export function WorkspaceSidebar() {
   const { data: invitations = [] } = useQuery({
     queryKey: ['invitations'],
     queryFn: async () => {
-      // @ts-expect-error - API route type mismatch
       const response = await apiClient.GET('/api/Organizations/invitations');
       if (response.error) return [];
       return (response.data as any) || [];
@@ -263,7 +262,6 @@ export function WorkspaceSidebar() {
 
   const deletePageMutation = useMutation({
     mutationFn: async (pageId: string) => {
-      // @ts-expect-error - API route type mismatch
       const response = await apiClient.DELETE('/api/Pages/{id}', {
         params: { path: { id: pageId } },
       });

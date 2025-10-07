@@ -23,7 +23,6 @@ export function InboxDialog({ open, onOpenChange }: InboxDialogProps) {
   const { data: invitations = [] } = useQuery({
     queryKey: ['invitations'],
     queryFn: async () => {
-      // @ts-expect-error - API route type mismatch
       const response = await apiClient.GET('/api/Organizations/invitations');
       if (response.error) throw new Error('Failed to fetch invitations');
       return (response.data as any) || [];
@@ -34,7 +33,6 @@ export function InboxDialog({ open, onOpenChange }: InboxDialogProps) {
   // Accept invitation mutation
   const acceptMutation = useMutation({
     mutationFn: async (invitationId: string) => {
-      // @ts-expect-error - API route type mismatch
       const response = await apiClient.POST('/api/Organizations/invitations/{invitationId}/accept', {
         params: { path: { invitationId } },
       });
@@ -54,7 +52,6 @@ export function InboxDialog({ open, onOpenChange }: InboxDialogProps) {
   // Decline invitation mutation
   const declineMutation = useMutation({
     mutationFn: async (invitationId: string) => {
-      // @ts-expect-error - API route type mismatch
       const response = await apiClient.POST('/api/Organizations/invitations/{invitationId}/decline', {
         params: { path: { invitationId } },
       });
