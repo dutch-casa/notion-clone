@@ -14,11 +14,21 @@ public class PageNotificationService : IPageNotificationService
     // Dictionary of org ID to their notification channels
     private readonly ConcurrentDictionary<Guid, List<Channel<PageNotification>>> _orgChannels = new();
 
+    private readonly Microsoft.Extensions.Logging.ILogger<PageNotificationService> _logger;
+
+    public PageNotificationService(Microsoft.Extensions.Logging.ILogger<PageNotificationService> logger)
+    {
+        _logger = logger;
+    }
+
     public async Task PublishPageNotificationAsync(
         Guid orgId,
         PageNotification notification,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("Publishing {EventType} notification for org {OrgId}, Active subscribers: {Count}",
+            notification.EventType, orgId, _orgChannels.TryGetValue(orgId, out var ch) ? ch.Count : 0);
+
         if (_orgChannels.TryGetValue(orgId, out var channels))
         {
             // Send to all active channels for this organization
@@ -27,14 +37,20 @@ public class PageNotificationService : IPageNotificationService
                 try
                 {
                     await channel.Writer.WriteAsync(notification, cancellationToken);
+                    _logger.LogDebug("Sent {EventType} notification to channel", notification.EventType);
                 }
                 catch (ChannelClosedException)
                 {
+                    _logger.LogWarning("Channel closed for org {OrgId}", orgId);
                     // Channel was closed, will be cleaned up by subscriber
                 }
             });
 
             await Task.WhenAll(tasks);
+        }
+        else
+        {
+            _logger.LogWarning("No subscribers for org {OrgId}", orgId);
         }
     }
 
@@ -42,6 +58,8 @@ public class PageNotificationService : IPageNotificationService
         Guid orgId,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        _logger.LogInformation("New SSE subscription for org {OrgId}", orgId);
+
         // Create a new channel for this subscription
         var channel = Channel.CreateUnbounded<PageNotification>(new UnboundedChannelOptions
         {
@@ -62,16 +80,22 @@ public class PageNotificationService : IPageNotificationService
                 return existing;
             });
 
+        _logger.LogInformation("SSE subscription added. Total subscribers for org {OrgId}: {Count}",
+            orgId, _orgChannels[orgId].Count);
+
         try
         {
             // Read from channel until cancelled
             await foreach (var notification in channel.Reader.ReadAllAsync(cancellationToken))
             {
+                _logger.LogDebug("Yielding {EventType} notification to SSE client", notification.EventType);
                 yield return notification;
             }
         }
         finally
         {
+            _logger.LogInformation("SSE subscription ended for org {OrgId}", orgId);
+
             // Cleanup: remove channel from org's channels
             if (_orgChannels.TryGetValue(orgId, out var channels))
             {
